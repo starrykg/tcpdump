@@ -223,3 +223,5 @@ The method was:
     wonderful things and you'll write up that research report
     "real soon now".
 ```
+sudo ../tcpdump -i any -C 1 -W 2 -w eth
+![img.png](img.png)
