@@ -861,7 +861,11 @@ MakeFilename(char *buffer, char *orig_name, int cnt, int max_chars)
 		if(systemRet == -1){
 			error("%s: system rm", __func__);
 		}
-
+        sprintf(command, "rm *.pcap%0*d.lz4 -rf", max_chars, cnt);
+        systemRet = system(command);
+        if(systemRet == -1){
+            error("%s: system rm", __func__);
+        }
 		time_t rawtime;
 		struct tm *ptminfo;
 		time(&rawtime);
@@ -2936,7 +2940,7 @@ compress_savefile(const char *filename)
 #else
 	setpriority(PRIO_PROCESS, 0, 19);
 #endif
-	if (execlp(zflag, zflag, filename, (char *)NULL) == -1)
+	if (execlp(zflag, zflag, "--rm", filename, (char *)NULL) == -1)
 		fprintf(stderr,
 			"compress_savefile: execlp(%s, %s) failed: %s\n",
 			zflag,
@@ -3121,7 +3125,7 @@ dump_packet_and_trunc(u_char *user, const struct pcap_pkthdr *h, const u_char *s
                     Cflag_count = 0;
                     if (FIRST_SAVE == 0){
                         char command[100];
-                        sprintf(command,"mv *.pcap%0*d `ls *.pcap%0*d |awk -F 'pcap%0*d' '{print $1\"pcap\"}'`", WflagChars, 0, WflagChars, 0, WflagChars, 0);
+                        sprintf(command,"mv *.pcap%0*d.lz4 `ls *.pcap%0*d.lz4 |awk -F '.pcap%0*d.lz4' '{print $1\"_init.pcap.lz4\"}'`", WflagChars, 0, WflagChars, 0, WflagChars, 0);
                         int systemRet = system(command);
                         if(systemRet == -1){
                             // The system method failed
