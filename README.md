@@ -3,7 +3,9 @@
 ## 1.
 ## ./configure --host=i686-pc-gnu CC=gcc --with-pcap=linux
 ## 2.
-## make
+## make clean; make
+## 3.
+## ./tcpdump -C 1K -W 12 -w auto.pcap -z lz4
 
 ![image](https://user-images.githubusercontent.com/16185403/233833609-bcd89688-81a5-4d5d-b807-be95028002e9.png)
 
