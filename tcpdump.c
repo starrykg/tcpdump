@@ -116,6 +116,7 @@ The Regents of the University of California.  All rights reserved.\n";
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <assert.h>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -383,7 +384,47 @@ error(FORMAT_STRING(const char *fmt), ...)
 	exit_tcpdump(S_ERR_HOST_PROGRAM);
 	/* NOTREACHED */
 }
+char *MyStrChr(char* str, char ch)//
+{
+    assert(str != NULL);
+    int i = 0, len = 0;
+    len = strlen(str);
+    for (i = len - 1; i >=0; i--)
+    {
+        if (str[i] == ch)
+        {
+            str[i + 1] = '\0';
+            return str;
+        }
+    }
+    return NULL;
+}
 
+int StrReplace(char strRes[],char from[], char to[])
+{
+    int i,flag = 0;
+    char *p,*q,*ts;
+    for(i = 0; strRes[i]; ++i)
+    {
+        if(strRes[i] == from[0])
+        {
+            p = strRes + i;
+            q = from;
+            while(*q && (*p++ == *q++));
+            if(*q == '\0')
+            {
+                ts = (char *)malloc(strlen(strRes) + 1);
+                strcpy(ts,p);
+                strRes[i] = '\0';
+                strcat(strRes,to);
+                strcat(strRes,ts);
+                free(ts);
+                flag = 1;
+            }
+        }
+    }
+    return flag;
+}
 /* VARARGS */
 static void PRINTFLIKE(1, 2)
 warning(FORMAT_STRING(const char *fmt), ...)
@@ -856,16 +897,19 @@ MakeFilename(char *buffer, char *orig_name, int cnt, int max_chars)
 		strncpy(buffer, filename, PATH_MAX + 1);
 	else{
 		char command[100];
-		sprintf(command, "rm *.pcap%0*d -rf", max_chars, cnt);
+        char str_name[100];
+        char file_name[100];
+        memset(str_name, orig_name, strlen(orig_name));
+        memcpy(str_name, orig_name, strlen(orig_name));
+        sprintf(file_name, "%s", MyStrChr(str_name, '/'));
+
+		sprintf(command, "rm %s*.pcap%0*d.gz -rf", file_name, max_chars, cnt);
+        warning("command===%s", command);
 		int systemRet = system(command);
 		if(systemRet == -1){
 			error("%s: system rm", __func__);
 		}
-        sprintf(command, "rm *.pcap%0*d.lz4 -rf", max_chars, cnt);
-        systemRet = system(command);
-        if(systemRet == -1){
-            error("%s: system rm", __func__);
-        }
+
 		time_t rawtime;
 		struct tm *ptminfo;
 		time(&rawtime);
@@ -1467,31 +1511,6 @@ open_interface(const char *device, netdissect_options *ndo, char *ebuf)
 	return (pc);
 }
 int FIRST_SAVE = 0;
-int StrReplace(char strRes[],char from[], char to[])
-{
-    int i,flag = 0;
-    char *p,*q,*ts;
-    for(i = 0; strRes[i]; ++i)
-    {
-        if(strRes[i] == from[0])
-        {
-            p = strRes + i;
-            q = from;
-            while(*q && (*p++ == *q++));
-            if(*q == '\0')
-            {
-                ts = (char *)malloc(strlen(strRes) + 1);
-                strcpy(ts,p);
-                strRes[i] = '\0';
-                strcat(strRes,to);
-                strcat(strRes,ts);
-                free(ts);
-                flag = 1;
-            }
-        }
-    }
-    return flag;
-}
 int
 main(int argc, char **argv)
 {
@@ -2940,10 +2959,10 @@ compress_savefile(const char *filename)
 #else
 	setpriority(PRIO_PROCESS, 0, 19);
 #endif
-	if (execlp(zflag, zflag, "--rm", filename, (char *)NULL) == -1)
+	if (execlp("gzip", "gzip", filename, (char *)NULL) == -1)
 		fprintf(stderr,
 			"compress_savefile: execlp(%s, %s) failed: %s\n",
-			zflag,
+			"gzip",
 			filename,
 			pcap_strerror(errno));
 #ifdef HAVE_FORK
@@ -3124,8 +3143,11 @@ dump_packet_and_trunc(u_char *user, const struct pcap_pkthdr *h, const u_char *s
 				if (Cflag_count >= Wflag){
                     Cflag_count = 0;
                     if (FIRST_SAVE == 0){
-                        char command[100];
-                        sprintf(command,"mv *.pcap%0*d.lz4 `ls *.pcap%0*d.lz4 |awk -F '.pcap%0*d.lz4' '{print $1\"_init.pcap.lz4\"}'`", WflagChars, 0, WflagChars, 0, WflagChars, 0);
+                        char command[200];
+                        char file_name[100];
+                        sprintf(file_name, "%s", MyStrChr(dump_info->CurrentFileName, '/'));
+                        sprintf(command,"mv %s*.pcap%0*d.gz `ls %s*.pcap%0*d.gz |awk -F 'pcap%0*d.gz' '{print $1\"_init.pcap.gz\"}'`", file_name, WflagChars, 0, file_name, WflagChars, 0, WflagChars, 0);
+                        warning("command===%s", command);
                         int systemRet = system(command);
                         if(systemRet == -1){
                             // The system method failed
